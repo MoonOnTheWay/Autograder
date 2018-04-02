@@ -1,0 +1,73 @@
+#!/usr/bin/env python
+
+####
+#### Usage is ./autograder problem answer_type
+####
+#### problem: integer which corresponds to problem to grade
+#### answer_type: 
+    # - ommitted for questions without free response
+    # - 0 for free response without multiple choice answer
+    # - 1 for free response with multiple choice answer
+
+import sys
+import re
+import json
+
+ANSWERS_FILE='expected_1.json'
+SUBMISSION_FILE='submission/exercise_1.txt'
+RESULTS_FILE='results/results.json'
+
+with open(ANSWERS_FILE, 'r') as f:
+    expected = json.load(f)
+# expected = {
+#     1 : { 'mc_answer': 'c' },
+#     2 : { 'mc_answer': 'd' },
+#     3 : { 'mc_answer': 'b' },
+#     4 : { 'mc_answer': 'c' },
+#     5 : { 'mc_answer': 'b' },
+#     6 : { 'mc_answer': 'a' },
+#     7 : { 'mc_answer': 'c', 'exp': True },
+#     8 : { 'mc_answer': 'd' },
+#     9 : { 'mc_answer': 'd', 'exp': True },
+#     10 : { 'mc_answer': 'c', 'exp': True }
+# }
+
+def grade(number, file):
+    number = str(number)
+    file = file[file.find('(' + number + '.)'):]
+    requires_letter = 'mc_answer' in expected[number]
+
+    ##make sure they put an explanation between $$
+    if('exp' in expected[number]):
+        index1 = file.index('$$')
+        index2 = file[index1+2:].index('$$')
+        explanation = file[index1+2:index2+index1+2]
+        if len(explanation.split(' ')) < 3:
+            return 'Bad Explanation'
+
+    ##check their answer between | | against expected
+    if requires_letter:
+        m = re.search('\|(.*?)\|', file)
+        if expected[number]['mc_answer'] == m.group(1).replace(' ', '').replace('ANSWER', ''):
+            return 'Correct'
+        else:
+            return 'Incorrect'
+
+    return 'Correct'
+
+def main():
+    with open(SUBMISSION_FILE, 'r') as f:
+        file = f.read()
+    output = {}
+    tests = []
+    for i in range(1, len(expected) + 1):
+        result = grade(i, file)
+        if result == 'Correct':
+            score = 1
+        else:
+            score = 0
+        tests.append({ 'score': score })
+    output['tests'] = tests
+    with open(RESULTS_FILE, 'w') as f:
+        f.write(json.dumps(output))
+main()
