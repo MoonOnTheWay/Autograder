@@ -19,6 +19,7 @@ with open(ANSWERS_FILE, 'r') as f:
 with open(METADATA_FILE) as f:
     metadata = json.load(f)
 
+## check the answer of each question
 def grade(number, file):
     number = str(number)
     file = file[file.find('(' + number + '.)'):]
@@ -43,22 +44,51 @@ def grade(number, file):
     return 'Correct'
 
 def should_rate_limit():
-    if len(metadata['previous_submissions']) >= 3:
+    if metadata['previous_submissions'][-1]['results']['total_successful_submission_count'] >= 3:
         return True
     return False
-        
 
+def exceed_latency():
+    now = metadata['created_at']
+    latest_successful_id = metadata['previous_submissions'][-1]['results']['latest_successful_submission_id']
+    prev = metadata['previous_submissions'][latest_successful_id]['submission_time']
+    if float(now[8:10]) > float(prev[8:10]):
+        return float((now[11:13] + 12) * 3600 + now[14:16] * 60 + now[17:19]) - float(prev[11:13] * 3600 + prev[14:16] * 60 + prev[17:19]) < 3600 * 3
+    else:
+        return float(now[11:13] * 3600 + now[14:16] * 60 + now[17:19]) - float(prev[11:13] * 3600 + prev[14:16] * 60 + prev[17:19]) < 3600 * 3   
+        
 def main():
-    submission_count = len(metadata['previous_submissions']) + 1
     if should_rate_limit():
         with open(RESULTS_FILE, 'w') as f:
-            output = metadata['previous_submissions'][-1]['results']
-            output['output'] = 'You have submitted more than 3 times. We will use your 3rd submission as your score.'
-            f.write(json.dumps(metadata['previous_submissions'][-1]['results']))
+            output = {}
+            output['warning'] = 'You have submitted more than 3 times. We will use your 3rd submission as your score.'
+            output['submission_count'] = metadata['id']
+            output['submission_time'] = metadata['created_at']
+            output['latest_successful_submission_id'] = metadata['previous_submissions'][-1]['results']['latest_successful_submission_id']
+            output['total_successful_submission_count'] = metadata['previous_submissions'][-1]['results']['total_successful_submission_count']
+            output['tests'] = metadata['previous_submissions'][-1]['results']['tests']
+            f.write(json.dumps(output))
             return 
+    if exceed_latency():
+        with open(RESULTS_FILE, 'w') as f:
+            output = {}
+            output['warning'] = 'You have submitted more than once within 3 hours. We show your latest submission here. Please retry later.'
+            output['submission_count'] = metadata['id']
+            output['submission_time'] = metadata['created_at']
+            output['latest_successful_submission_id'] = metadata['previous_submissions'][-1]['results']['latest_successful_submission_id']
+            output['total_successful_submission_count'] = metadata['previous_submissions'][-1]['results']['total_successful_submission_count']
+            output['tests'] = metadata['previous_submissions'][-1]['results']['tests']
+            f.write(json.dumps(output))
+            return
+    
     with open(SUBMISSION_FILE, 'r') as f:
         file = f.read()
     output = {}
+    output['warning'] = 'You have ' + str(3 - 1 - metadata['previous_submissions'][-1]['results']['total_successful_submission_count']) + ' submission attemps remaining.'
+    output['submission_count'] = metadata['id']
+    output['submission_time'] = metadata['created_at']
+    output['latest_successful_submission_id'] = metadata['id']
+    output['total_successful_submission_count'] = metadata['previous_submissions'][-1]['results']['total_successful_submission_count'] + 1
     tests = []
     for i in range(1, len(expected) + 1):
         result = grade(i, file)
@@ -68,7 +98,7 @@ def main():
             score = 0
         tests.append({ 'score': score, 'output': result })
     output['tests'] = tests
-    output['output'] = 'You have ' + str(3 - submission_count) + ' submission attempts remaining.'
+
     with open(RESULTS_FILE, 'w') as f:
         f.write(json.dumps(output))
 main()

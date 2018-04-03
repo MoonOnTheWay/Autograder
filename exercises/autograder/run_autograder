@@ -1,0 +1,74 @@
+#!/usr/bin/env python
+
+####
+#### Usage is ./autograder
+####
+
+import sys
+import re
+import json
+
+ANSWERS_FILE='source/expected_1.json'
+SUBMISSION_FILE='submission/exercise_1.txt'
+RESULTS_FILE='results/results.json'
+METADATA_FILE='submission_metadata.json'
+
+with open(ANSWERS_FILE, 'r') as f:
+    expected = json.load(f)
+
+with open(METADATA_FILE) as f:
+    metadata = json.load(f)
+
+def grade(number, file):
+    number = str(number)
+    file = file[file.find('(' + number + '.)'):]
+    requires_letter = 'mc_answer' in expected[number]
+
+    ##make sure they put an explanation between $$
+    if('exp' in expected[number]):
+        index1 = file.index('$$')
+        index2 = file[index1+2:].index('$$')
+        explanation = file[index1+2:index2+index1+2]
+        if len(explanation.split(' ')) < 3:
+            return 'Bad Explanation'
+
+    ##check their answer between | | against expected
+    if requires_letter:
+        m = re.search('\|(.*?)\|', file)
+        if expected[number]['mc_answer'] == m.group(1).replace(' ', '').replace('ANSWER', ''):
+            return 'Correct'
+        else:
+            return 'Incorrect'
+
+    return 'Correct'
+
+def should_rate_limit():
+    if len(metadata['previous_submissions']) >= 3:
+        return True
+    return False
+        
+
+def main():
+    submission_count = len(metadata['previous_submissions']) + 1
+    if should_rate_limit():
+        with open(RESULTS_FILE, 'w') as f:
+            output = metadata['previous_submissions'][-1]['results']
+            output['output'] = 'You have submitted more than 3 times. We will use your 3rd submission as your score.'
+            f.write(json.dumps(metadata['previous_submissions'][-1]['results']))
+            return 
+    with open(SUBMISSION_FILE, 'r') as f:
+        file = f.read()
+    output = {}
+    tests = []
+    for i in range(1, len(expected) + 1):
+        result = grade(i, file)
+        if result == 'Correct':
+            score = 1
+        else:
+            score = 0
+        tests.append({ 'score': score, 'output': result })
+    output['tests'] = tests
+    output['output'] = 'You have ' + str(3 - submission_count) + ' submission attempts remaining.'
+    with open(RESULTS_FILE, 'w') as f:
+        f.write(json.dumps(output))
+main()
