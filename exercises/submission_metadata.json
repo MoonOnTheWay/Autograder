@@ -2,19 +2,5 @@
   "id": 1,
   "created_at": "2017-04-06T15:22:32.365935-07:00",
   "assignment_id": 1,
-  "previous_submissions": [
-    {
-      "submission_time": "2017-04-06T14:24:48.087023-07:00",
-      "score": 0.0,
-      "results": 
-        {
-          "warning": "You have 3 submission attemps remaining.",
-          "submission_count": 0,
-          "submission_time": "2017-04-06T13:22:48.087023-07:00",
-          "latest_successful_submission_id": 0,
-          "total_successful_submission_count": 1,
-          "tests": [{"score": 1}, {"score": 1}, {"score": 1}, {"score": 1}, {"score": 1}, {"score": 1}, {"score": 1}, {"score": 1}, {"score": 1}, {"score": 1}]
-        }
-    }
-  ]
+  "previous_submissions": []
 }

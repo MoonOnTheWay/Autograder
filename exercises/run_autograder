@@ -44,11 +44,15 @@ def grade(number, file):
     return 'Correct'
 
 def should_rate_limit():
+    if len(metadata['previous_submissions']) == 0:
+        return False
     if metadata['previous_submissions'][-1]['results']['total_successful_submission_count'] >= 3:
         return True
     return False
 
 def exceed_latency():
+    if len(metadata['previous_submissions']) == 0:
+        return False
     now = metadata['created_at']
     latest_successful_id = metadata['previous_submissions'][-1]['results']['latest_successful_submission_id']
     prev = metadata['previous_submissions'][latest_successful_id]['submission_time']
@@ -84,11 +88,15 @@ def main():
     with open(SUBMISSION_FILE, 'r') as f:
         file = f.read()
     output = {}
-    output['warning'] = 'You have ' + str(3 - 1 - metadata['previous_submissions'][-1]['results']['total_successful_submission_count']) + ' submission attemps remaining.'
+    if len(metadata['previous_submissions']) == 0:
+        output['warning'] = 'You have 3 submission attemps remaining.'
+        output['total_successful_submission_count'] = 1
+    else:
+        output['warning'] = 'You have ' + str(3 - 1 - metadata['previous_submissions'][-1]['results']['total_successful_submission_count']) + ' submission attemps remaining.'
+        output['total_successful_submission_count'] = metadata['previous_submissions'][-1]['results']['total_successful_submission_count'] + 1
     output['submission_count'] = metadata['id']
     output['submission_time'] = metadata['created_at']
     output['latest_successful_submission_id'] = metadata['id']
-    output['total_successful_submission_count'] = metadata['previous_submissions'][-1]['results']['total_successful_submission_count'] + 1
     tests = []
     for i in range(1, len(expected) + 1):
         result = grade(i, file)
