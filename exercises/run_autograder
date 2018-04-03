@@ -1,13 +1,8 @@
 #!/usr/bin/env python
 
 ####
-#### Usage is ./autograder problem answer_type
+#### Usage is ./autograder
 ####
-#### problem: integer which corresponds to problem to grade
-#### answer_type: 
-    # - ommitted for questions without free response
-    # - 0 for free response without multiple choice answer
-    # - 1 for free response with multiple choice answer
 
 import sys
 import re
@@ -16,21 +11,10 @@ import json
 ANSWERS_FILE='expected_1.json'
 SUBMISSION_FILE='submission/exercise_1.txt'
 RESULTS_FILE='results/results.json'
+METADATA_FILE='submission_metadata.json'
 
 with open(ANSWERS_FILE, 'r') as f:
     expected = json.load(f)
-# expected = {
-#     1 : { 'mc_answer': 'c' },
-#     2 : { 'mc_answer': 'd' },
-#     3 : { 'mc_answer': 'b' },
-#     4 : { 'mc_answer': 'c' },
-#     5 : { 'mc_answer': 'b' },
-#     6 : { 'mc_answer': 'a' },
-#     7 : { 'mc_answer': 'c', 'exp': True },
-#     8 : { 'mc_answer': 'd' },
-#     9 : { 'mc_answer': 'd', 'exp': True },
-#     10 : { 'mc_answer': 'c', 'exp': True }
-# }
 
 def grade(number, file):
     number = str(number)
@@ -55,7 +39,16 @@ def grade(number, file):
 
     return 'Correct'
 
+def rate_limit():
+    with open(METADATA_FILE) as f:
+        metadata = json.load(f)
+    if len(metadata['previous_submissions']) > 3:
+        with open(RESULTS_FILE, 'w') as f:
+            f.write(json.dumps(metadata['previous_submissions'][0]['results']))
+            sys.exit()
+
 def main():
+    rate_limit()
     with open(SUBMISSION_FILE, 'r') as f:
         file = f.read()
     output = {}
