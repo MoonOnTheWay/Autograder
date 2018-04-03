@@ -8,13 +8,16 @@ import sys
 import re
 import json
 
-ANSWERS_FILE='expected_1.json'
+ANSWERS_FILE='source/expected_1.json'
 SUBMISSION_FILE='submission/exercise_1.txt'
 RESULTS_FILE='results/results.json'
 METADATA_FILE='submission_metadata.json'
 
 with open(ANSWERS_FILE, 'r') as f:
     expected = json.load(f)
+
+with open(METADATA_FILE) as f:
+    metadata = json.load(f)
 
 def grade(number, file):
     number = str(number)
@@ -39,16 +42,20 @@ def grade(number, file):
 
     return 'Correct'
 
-def rate_limit():
-    with open(METADATA_FILE) as f:
-        metadata = json.load(f)
-    if len(metadata['previous_submissions']) > 3:
-        with open(RESULTS_FILE, 'w') as f:
-            f.write(json.dumps(metadata['previous_submissions'][0]['results']))
-            sys.exit()
+def should_rate_limit():
+    if len(metadata['previous_submissions']) >= 3:
+        return True
+    return False
+        
 
 def main():
-    rate_limit()
+    submission_count = len(metadata['previous_submissions']) + 1
+    if should_rate_limit():
+        with open(RESULTS_FILE, 'w') as f:
+            output = metadata['previous_submissions'][-1]['results']
+            output['output'] = 'You have submitted more than 3 times. We will use your 3rd submission as your score.'
+            f.write(json.dumps(metadata['previous_submissions'][-1]['results']))
+            return 
     with open(SUBMISSION_FILE, 'r') as f:
         file = f.read()
     output = {}
@@ -59,8 +66,9 @@ def main():
             score = 1
         else:
             score = 0
-        tests.append({ 'score': score })
+        tests.append({ 'score': score, 'output': result })
     output['tests'] = tests
+    output['output'] = 'You have ' + str(3 - submission_count) + ' submission attempts remaining.'
     with open(RESULTS_FILE, 'w') as f:
         f.write(json.dumps(output))
 main()
