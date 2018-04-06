@@ -1,0 +1,19 @@
+total 168
+drwxr-xr-x  18 muxu  staff    576 Apr  3 18:11 .
+drwxr-xr-x  10 muxu  staff    320 Apr  3 18:38 ..
+-rwxr-xr-x   1 muxu  staff     24 Mar 28 12:42 temp4
+-rwxr-xr-x   1 muxu  staff    116 Mar 28 12:42 temp3
+-rwxr-xr-x   1 muxu  staff    970 Apr  3 19:20 temp2
+-rwxr-xr-x   1 muxu  staff      0 Apr  3 19:20 temp
+-rw-r-x---   1 muxu  staff     49 Mar 28 12:42 testfile1
+drwxr-xr-x   3 muxu  staff     96 Apr  3 17:44 shell.dSYM
+-rw-r-x---   1 muxu  staff     50 Mar 28 12:42 testfile0
+-rw-r-x---   1 muxu  staff    105 Mar 28 12:42 Makefile
+-rwxr-xr-x   1 muxu  staff  14184 Apr  3 18:11 shell
+-rw-r-x---   1 muxu  staff   4717 Mar 28 12:42 shell.c
+-rwxr-xr-x   1 muxu  staff    778 Mar 28 12:42 temp1
+-rwxr-xr-x   1 muxu  staff  13600 Apr  3 18:11 a.out
+-rw-r-x---   1 muxu  staff    127 Mar 28 12:42 testfile2
+-rw-r-x---   1 muxu  staff    111 Mar 28 12:42 testfile3
+-rw-r-x---   1 muxu  staff    154 Mar 28 12:42 testfile4
+-rw-r-x---   1 muxu  staff     47 Mar 28 12:42 testfile

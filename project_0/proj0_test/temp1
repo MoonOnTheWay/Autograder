@@ -1,0 +1,15 @@
+-rw-r-x---. 1 cs170 faculty   105 Mar 27 13:36 Makefile
+-rw-r-x---. 1 cs170 faculty   111 Mar 27 13:36 testfile3
+-rw-r-x---. 1 cs170 faculty   127 Mar 27 13:36 testfile2
+-rw-r-x---. 1 cs170 faculty   154 Mar 27 13:36 testfile4
+-rw-r-x---. 1 cs170 faculty  4717 Mar 27 13:36 shell.c
+-rw-r-x---. 1 cs170 faculty    47 Mar 27 13:36 testfile
+-rw-r-x---. 1 cs170 faculty    49 Mar 27 13:36 testfile1
+-rw-r-x---. 1 cs170 faculty    50 Mar 27 13:36 testfile0
+-rwxr-xr-x. 1 cs170 faculty   116 Apr  9  2017 temp
+-rwxr-xr-x. 1 cs170 faculty    24 Mar 27 13:36 temp4
+-rwxr-xr-x. 1 cs170 faculty   473 Mar 27 13:36 temp1
+-rwxr-xr-x. 1 cs170 faculty   604 Mar 27 13:36 temp2
+-rwxr-xr-x. 1 cs170 faculty    77 Mar 27 13:36 temp3
+-rwxr-xr-x. 1 cs170 grad    17624 Apr  9 09:37 shell
+total 76

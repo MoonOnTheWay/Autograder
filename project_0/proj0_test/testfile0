@@ -1,0 +1,2 @@
+cat testfile0 | sed 's/e/E/' 
+echo Output of sort
