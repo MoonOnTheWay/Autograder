@@ -34,6 +34,21 @@ def exceed_latency():
     else:
         return float(now[11:13]) * 3600 + float(now[14:16]) * 60 + float(now[17:19]) - float(prev[11:13]) * 3600 + float(prev[14:16]) * 60 + float(prev[17:19]) < 3600 * 3   
 
+def is_diff(filename, returnstring1):
+	f = open(filename, "r")
+	returnstring2 = ""
+	for line in f:
+		line = line.strip('\n')
+		process = subprocess.Popen(line, stdout=subprocess.PIPE, shell = True)
+		out, err = process.communicate()
+		returnstring2 += out
+		if process.returncode == 1:
+			print line
+	with open('string1', 'w') as f:
+		f.write(returnstring1)
+	with open('string2', 'w') as f:
+		f.write(returnstring2)
+	return returnstring1 != returnstring2
 
 def main():
 	if should_rate_limit():
@@ -72,16 +87,21 @@ def main():
 	output['latest_successful_submission_time'] = metadata['created_at']
 
 	tests = []
+
+	
+
 	for filename in os.listdir('.'):
 		if not filename.startswith('testfile'):
 			continue
-		returncode = subprocess.call(["./shell < " + filename], shell = True)
-		if returncode == 0:
-			score = 15
-			result = "Passed"
-		else:
+		process = subprocess.Popen(["./shell < " + filename], stdout=subprocess.PIPE, shell = True)
+		returnstring1, err = process.communicate()
+		if process.returncode == 1 or is_diff(filename, returnstring1):
 			score = 0
 			result = "Not Passed"
+		else:
+			score = 15
+			result = "Passed"
+		print result + '\n'
 		tests.append({'score': score, "output": result})
 	output['tests'] = tests
 
