@@ -1,2 +1,6 @@
+ls -l 
+ls -l | grep t
+ls -l | grep t | wc
 cat testfile0 | sed 's/e/E/' 
 echo Output of sort
+exit

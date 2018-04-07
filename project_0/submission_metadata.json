@@ -1,0 +1,31 @@
+{
+  "assignment_id": 69733, 
+  "created_at": "2018-04-03T17:54:10.017068-07:00", 
+  "users": [{"email": "muxu@ucsb.edu", "id": 459269, "name": "Mu Xu"}], 
+  "previous_submissions": [
+    {
+      "score": "98.0", 
+      "results": {
+        "tests": [
+          {"name": null, "tags": null, "number": null, "visibility": null, "score": 15.0, "output": "Passed", "extra_data": null, "max_score": null}, 
+          {"name": null, "tags": null, "number": null, "visibility": null, "score": 15.0, "output": "Passed", "extra_data": null, "max_score": null},
+          {"name": null, "tags": null, "number": null, "visibility": null, "score": 15.0, "output": "Passed", "extra_data": null, "max_score": null},
+          {"name": null, "tags": null, "number": null, "visibility": null, "score": 15.0, "output": "Passed", "extra_data": null, "max_score": null},
+          {"name": null, "tags": null, "number": null, "visibility": null, "score": 15.0, "output": "Passed", "extra_data": null, "max_score": null}
+        ],
+        "score": null, 
+        "stdout": null, 
+        "execution_time": null, 
+        "visibility": null, 
+        "warning": "You have 3 submission attemps remaining.", 
+        "latest_successful_submission_time": "2018-04-03T14:29:06.992530-07:00", 
+        "total_successful_submission_count": 1, 
+        "submission_count": 1, 
+        "output": null, 
+        "extra_data": null, 
+        "leaderboard": []
+      }, 
+      "submission_time": "2018-04-03T14:29:06.992530-07:00"
+    }
+  ]
+}

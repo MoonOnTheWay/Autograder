@@ -1,0 +1,91 @@
+#!/usr/bin/env python
+#!/bin/sh
+
+####
+#### Usage is ./autograder
+####
+
+import sys
+import re
+import json
+import os
+import subprocess
+
+RESULTS_FILE='results/results.json'
+METADATA_FILE='submission_metadata.json'
+
+with open(METADATA_FILE) as f:
+	metadata = json.load(f)
+
+def should_rate_limit():
+    if len(metadata['previous_submissions']) == 0:
+        return False
+    if metadata['previous_submissions'][-1]['results']['total_successful_submission_count'] >= 3:
+        return True
+    return False
+
+def exceed_latency():
+    if len(metadata['previous_submissions']) == 0:
+        return False
+    now = metadata['created_at']
+    prev = metadata['previous_submissions'][-1]['results']['latest_successful_submission_time']
+    if float(now[8:10]) > float(prev[8:10]):
+        return (float(now[11:13]) + 12) * 3600 + float(now[14:16]) * 60 + float(now[17:19]) - float(prev[11:13]) * 3600 + float(prev[14:16]) * 60 + float(prev[17:19]) < 3600 * 3
+    else:
+        return float(now[11:13]) * 3600 + float(now[14:16]) * 60 + float(now[17:19]) - float(prev[11:13]) * 3600 + float(prev[14:16]) * 60 + float(prev[17:19]) < 3600 * 3   
+
+
+def main():
+	if should_rate_limit():
+		with open(RESULTS_FILE, 'w') as f:
+			output = {}
+			output['output'] = 'You have submitted more than 3 times. We will use your 3rd submission as your score.'
+			output['submission_count'] = len(metadata['previous_submissions']) + 1
+			output['latest_successful_submission_time'] = metadata['previous_submissions'][-1]['results']['latest_successful_submission_time']
+			output['total_successful_submission_count'] = metadata['previous_submissions'][-1]['results']['total_successful_submission_count']
+			output['tests'] = metadata['previous_submissions'][-1]['results']['tests']
+			f.write(json.dumps(output))
+			return 
+	if exceed_latency():
+		with open(RESULTS_FILE, 'w') as f:
+			output = {}
+			output['output'] = 'You have submitted more than once within 3 hours. Your last successful submission time is: ' + metadata['previous_submissions'][-1]['results']['latest_successful_submission_time'] + '. Please retry later.'
+			output['submission_count'] = len(metadata['previous_submissions']) + 1
+			output['latest_successful_submission_time'] = metadata['previous_submissions'][-1]['results']['latest_successful_submission_time']
+			output['total_successful_submission_count'] = metadata['previous_submissions'][-1]['results']['total_successful_submission_count']
+			output['tests'] = metadata['previous_submissions'][-1]['results']['tests']
+			f.write(json.dumps(output))
+			return
+    
+	subprocess.call(["cp", "-r", "submission/.", "."])
+	subprocess.call(["cp", "-r", "source/.", "."])
+	subprocess.call(["make"])
+
+	output = {}
+	if len(metadata['previous_submissions']) == 0:
+		output['output'] = 'You have 2 submission attemps remaining.'
+		output['total_successful_submission_count'] = 1
+	else:
+		output['output'] = 'You have ' + str(3 - 1 - metadata['previous_submissions'][-1]['results']['total_successful_submission_count']) + ' submission attemps remaining.'
+		output['total_successful_submission_count'] = metadata['previous_submissions'][-1]['results']['total_successful_submission_count'] + 1
+	output['submission_count'] = len(metadata['previous_submissions']) + 1
+	output['latest_successful_submission_time'] = metadata['created_at']
+
+	tests = []
+	for filename in os.listdir('.'):
+		if not filename.startswith('testfile'):
+			continue
+		returncode = subprocess.call(["./shell < " + filename], shell = True)
+		if returncode == 0:
+			score = 15
+			result = "Passed"
+		else:
+			score = 0
+			result = "Not Passed"
+		tests.append({'score': score, "output": result})
+	output['tests'] = tests
+
+	with open(RESULTS_FILE, 'w') as f:
+		f.write(json.dumps(output))
+
+main()

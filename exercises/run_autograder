@@ -49,17 +49,7 @@ def should_rate_limit():
     if metadata['previous_submissions'][-1]['results']['total_successful_submission_count'] >= 3:
         return True
     return False
-
-def exceed_latency():
-    if len(metadata['previous_submissions']) == 0:
-        return False
-    now = metadata['created_at']
-    prev = metadata['previous_submissions'][-1]['results']['latest_successful_submission_time']
-    if float(now[8:10]) > float(prev[8:10]):
-        return (float(now[11:13]) + 12) * 3600 + float(now[14:16]) * 60 + float(now[17:19]) - float(prev[11:13]) * 3600 + float(prev[14:16]) * 60 + float(prev[17:19]) < 3600 * 3
-    else:
-        return float(now[11:13]) * 3600 + float(now[14:16]) * 60 + float(now[17:19]) - float(prev[11:13]) * 3600 + float(prev[14:16]) * 60 + float(prev[17:19]) < 3600 * 3   
-        
+      
 def main():
     if should_rate_limit():
         with open(RESULTS_FILE, 'w') as f:
@@ -71,22 +61,12 @@ def main():
             output['tests'] = metadata['previous_submissions'][-1]['results']['tests']
             f.write(json.dumps(output))
             return 
-    if exceed_latency():
-        with open(RESULTS_FILE, 'w') as f:
-            output = {}
-            output['output'] = 'You have submitted more than once within 3 hours. Your last successful submission time is: ' + metadata['previous_submissions'][-1]['results']['latest_successful_submission_time'] + '. Please retry later.'
-            output['submission_count'] = len(metadata['previous_submissions']) + 1
-            output['latest_successful_submission_time'] = metadata['previous_submissions'][-1]['results']['latest_successful_submission_time']
-            output['total_successful_submission_count'] = metadata['previous_submissions'][-1]['results']['total_successful_submission_count']
-            output['tests'] = metadata['previous_submissions'][-1]['results']['tests']
-            f.write(json.dumps(output))
-            return
     
     with open(SUBMISSION_FILE, 'r') as f:
         file = f.read()
     output = {}
     if len(metadata['previous_submissions']) == 0:
-        output['output'] = 'You have 3 submission attemps remaining.'
+        output['output'] = 'You have 2 submission attemps remaining.'
         output['total_successful_submission_count'] = 1
     else:
         output['output'] = 'You have ' + str(3 - 1 - metadata['previous_submissions'][-1]['results']['total_successful_submission_count']) + ' submission attemps remaining.'

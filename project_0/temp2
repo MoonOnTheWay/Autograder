@@ -1,11 +1,13 @@
-4d3
-< -rw-r--r--@  1 muxu  staff   6148 Apr  5 18:27 .DS_Store
-14d12
-< -rwxr-xr-x   1 muxu  staff   1187 Apr  5 18:27 temp
-16a15
-> -rwxr-xr-x   1 muxu  staff   1346 Apr  5 18:27 temp
-20d18
+6d5
+< -rw-r--r--@  1 muxu  staff   6148 Apr  6 16:42 .DS_Store
+23d21
 < drwxr-xr-x   8 muxu  staff    256 Apr  3 17:44 ..
+27,28c25
+< drwxr-xr-x  27 muxu  staff    864 Apr  6 16:42 .
+< total 192
+---
+> total 176
+u  staff    256 Apr  3 17:44 ..
 24,25c22
 < drwxr-xr-x  24 muxu  staff    768 Apr  5 18:27 .
 < total 168
