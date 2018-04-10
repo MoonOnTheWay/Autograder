@@ -10,6 +10,8 @@ import re
 import json
 import os
 import subprocess
+import signal
+import time
 
 RESULTS_FILE='results/results.json'
 METADATA_FILE='submission_metadata.json'
@@ -101,16 +103,29 @@ def main():
 		else:
 			name = filename
 			score = 5
-			result = "Passed. Score you get for this test case: " + score
+			result = "Passed. Score you get for this test case: " + str(score)
 		print result + '\n'
 		tests.append({'name': name, 'score': score, "output": result})
 	
 
 	# Please add here
-	# simulate double CTRL-C
-	# score = 5
-	# result = "Passed. Score you get for this test case: " + score
-	# tests.append({'name': "Double CTRL-C", 'score': score, "output": result})
+	# simulate double CTRL-Z
+        process = subprocess.Popen(["./shell"])
+        time.sleep(2)
+        process.send_signal(signal.SIGTSTP)
+        first_sig_result = process.poll()
+        time.sleep(2)
+        process.send_signal(signal.SIGTSTP)
+        time.sleep(2)
+        second_sig_result = process.poll()
+        if first_sig_result is None and second_sig_result is not None:
+            score = 5
+            result = "Passed. Score you get for this test case: " + str(score)
+        else:
+            score = 0
+            result = "Not Passed. Score you get for this test case: " + str(score)
+        print result + '\n'
+        tests.append({'name': "Double CTRL-Z", 'score': score, "output": result})
 
 	tests.append({'name': 'Reward for efforts', 'score': 25, 'output': "Base Score: 25"})
 	tests = sorted(tests, key = lambda key: key['name'], reverse = False)
