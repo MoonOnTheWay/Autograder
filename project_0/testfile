@@ -1,4 +1,0 @@
-ls -l 
-ls -l | grep t
-ls -l | grep t | wc
-exit

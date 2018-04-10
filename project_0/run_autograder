@@ -30,11 +30,11 @@ def exceed_latency():
     now = metadata['created_at']
     prev = metadata['previous_submissions'][-1]['results']['latest_successful_submission_time']
     if float(now[8:10]) > float(prev[8:10]):
-        return (float(now[11:13]) + 12) * 3600 + float(now[14:16]) * 60 + float(now[17:19]) - float(prev[11:13]) * 3600 + float(prev[14:16]) * 60 + float(prev[17:19]) < 3600 * 3
+        return (float(now[11:13]) + 12) * 3600 + float(now[14:16]) * 60 + float(now[17:19]) - (float(prev[11:13]) * 3600 + float(prev[14:16]) * 60 + float(prev[17:19])) < 3600
     else:
-        return float(now[11:13]) * 3600 + float(now[14:16]) * 60 + float(now[17:19]) - float(prev[11:13]) * 3600 + float(prev[14:16]) * 60 + float(prev[17:19]) < 3600 * 3   
+        return float(now[11:13]) * 3600 + float(now[14:16]) * 60 + float(now[17:19]) - (float(prev[11:13]) * 3600 + float(prev[14:16]) * 60 + float(prev[17:19])) < 3600   
 
-def is_diff(filename, returnstring1):
+def get_expected_result(filename):
 	f = open(filename, "r")
 	returnstring2 = ""
 	for line in f:
@@ -42,13 +42,7 @@ def is_diff(filename, returnstring1):
 		process = subprocess.Popen(line, stdout=subprocess.PIPE, shell = True)
 		out, err = process.communicate()
 		returnstring2 += out
-		if process.returncode == 1:
-			print line
-	with open('string1', 'w') as f:
-		f.write(returnstring1)
-	with open('string2', 'w') as f:
-		f.write(returnstring2)
-	return returnstring1 != returnstring2
+	return returnstring2
 
 def main():
 	if should_rate_limit():
@@ -64,7 +58,7 @@ def main():
 	if exceed_latency():
 		with open(RESULTS_FILE, 'w') as f:
 			output = {}
-			output['output'] = 'You have submitted more than once within 3 hours. Your last successful submission time is: ' + metadata['previous_submissions'][-1]['results']['latest_successful_submission_time'] + '. Please retry later.'
+			output['output'] = 'You have submitted more than once within 1 hour. Your last successful submission time is: ' + metadata['previous_submissions'][-1]['results']['latest_successful_submission_time'] + '. Please retry later.'
 			output['submission_count'] = len(metadata['previous_submissions']) + 1
 			output['latest_successful_submission_time'] = metadata['previous_submissions'][-1]['results']['latest_successful_submission_time']
 			output['total_successful_submission_count'] = metadata['previous_submissions'][-1]['results']['total_successful_submission_count']
@@ -95,14 +89,31 @@ def main():
 			continue
 		process = subprocess.Popen(["./shell < " + filename], stdout=subprocess.PIPE, shell = True)
 		returnstring1, err = process.communicate()
-		if process.returncode == 1 or is_diff(filename, returnstring1):
+		returnstring2 = get_expected_result(filename)
+		if process.returncode == 1 or returnstring1 != returnstring2:
+			name = filename
 			score = 0
-			result = "Not Passed"
+			result = "Not Passed. Score you get for this test case: 0\n\n" \
+			"Your output is:\n" \
+			+ returnstring1 + \
+			"\nThe expected output is: \n" \
+			+ returnstring2
 		else:
-			score = 15
-			result = "Passed"
+			name = filename
+			score = 5
+			result = "Passed. Score you get for this test case: " + score
 		print result + '\n'
-		tests.append({'score': score, "output": result})
+		tests.append({'name': name, 'score': score, "output": result})
+	
+
+	# Please add here
+	# simulate double CTRL-C
+	# score = 5
+	# result = "Passed. Score you get for this test case: " + score
+	# tests.append({'name': "Double CTRL-C", 'score': score, "output": result})
+
+	tests.append({'name': 'Reward for efforts', 'score': 25, 'output': "Base Score: 25"})
+	tests = sorted(tests, key = lambda key: key['name'], reverse = False)
 	output['tests'] = tests
 
 	with open(RESULTS_FILE, 'w') as f:

@@ -1,0 +1,4 @@
+ls > ls.out
+echo Output of ls
+cat ls.out
+rm ls.out
