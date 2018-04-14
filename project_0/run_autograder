@@ -32,7 +32,7 @@ def exceed_latency():
     now = metadata['created_at']
     prev = metadata['previous_submissions'][-1]['results']['latest_successful_submission_time']
     if float(now[8:10]) > float(prev[8:10]):
-        return (float(now[11:13]) + 12) * 3600 + float(now[14:16]) * 60 + float(now[17:19]) - (float(prev[11:13]) * 3600 + float(prev[14:16]) * 60 + float(prev[17:19])) < 3600
+    	return (float(now[11:13]) + 24) * 3600 + float(now[14:16]) * 60 + float(now[17:19]) - (float(prev[11:13]) * 3600 + float(prev[14:16]) * 60 + float(prev[17:19])) < 3600
     else:
         return float(now[11:13]) * 3600 + float(now[14:16]) * 60 + float(now[17:19]) - (float(prev[11:13]) * 3600 + float(prev[14:16]) * 60 + float(prev[17:19])) < 3600   
 
@@ -95,14 +95,20 @@ def main():
 		if process.returncode == 1 or returnstring1 != returnstring2:
 			name = filename
 			score = 0
+			with open(filename) as f:
+				filecontent = f.read()
 			result = "Not Passed. Score you get for this test case: 0\n\n" \
-			"Your output is:\n" \
+			"The test file is:\n"\
+			+ filecontent + \
+			"\n\nYour output is:\n" \
 			+ returnstring1 + \
 			"\nThe expected output is: \n" \
 			+ returnstring2
 		else:
 			name = filename
 			score = 5
+			with open(filename) as f:
+				filecontent = f.read()
 			result = "Passed. Score you get for this test case: " + str(score)
 		print result + '\n'
 		tests.append({'name': name, 'score': score, "output": result})
@@ -115,10 +121,13 @@ def main():
         process.send_signal(signal.SIGTSTP)
         first_sig_result = process.poll()
         time.sleep(2)
-        process.send_signal(signal.SIGTSTP)
+        try:
+        	process.send_signal(signal.SIGTSTP)
+        except OSError:
+        	print "error"
         time.sleep(2)
         second_sig_result = process.poll()
-        if first_sig_result is None and second_sig_result is not None:
+        if first_sig_result is not None or second_sig_result is not None:
             score = 5
             result = "Passed. Score you get for this test case: " + str(score)
         else:
