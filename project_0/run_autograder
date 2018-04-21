@@ -22,13 +22,17 @@ with open(METADATA_FILE) as f:
 def should_rate_limit():
     if len(metadata['previous_submissions']) == 0:
         return False
-    if metadata['previous_submissions'][-1]['results']['total_successful_submission_count'] >= 3:
+    if 'total_successful_submission_count' not in metadata['previous_submissions'][-1]['results']:
+    	return False
+    if metadata['previous_submissions'][-1]['results']['total_successful_submission_count'] >= 10:
         return True
     return False
 
 def exceed_latency():
     if len(metadata['previous_submissions']) == 0:
         return False
+    if 'latest_successful_submission_time' not in metadata['previous_submissions'][-1]['results']:
+    	return False
     now = metadata['created_at']
     prev = metadata['previous_submissions'][-1]['results']['latest_successful_submission_time']
     if float(now[8:10]) > float(prev[8:10]):
@@ -50,7 +54,7 @@ def main():
 	if should_rate_limit():
 		with open(RESULTS_FILE, 'w') as f:
 			output = {}
-			output['output'] = 'You have submitted more than 3 times. We will use your 3rd submission as your score.'
+			output['output'] = 'You have submitted more than 10 times. We will use your last submission as your score.'
 			output['submission_count'] = len(metadata['previous_submissions']) + 1
 			output['latest_successful_submission_time'] = metadata['previous_submissions'][-1]['results']['latest_successful_submission_time']
 			output['total_successful_submission_count'] = metadata['previous_submissions'][-1]['results']['total_successful_submission_count']
@@ -70,14 +74,33 @@ def main():
     
 	subprocess.call(["cp", "-r", "submission/.", "."])
 	subprocess.call(["cp", "-r", "source/.", "."])
-	subprocess.call(["make"])
+	if os.path.isfile("shell.c"):
+		subprocess.call(["make"])
+	elif os.path.isfile("shell.cc"):
+		subprocess.call("c++ -std=c++11 -c -o shell.o shell.cc", shell = True)
+		subprocess.call("gcc -std=c++11 -o shell shell.o -O -lstdc++", shell = True)
+	else:
+		with open(RESULTS_FILE, 'w') as f:
+			output = {}
+			output['output'] = 'Your file is not named correctly. It should be either "shell.c" or "shell.cc".'
+			tests = []
+			tests.append({'score': 0})
+			output['tests'] = tests
+			f.write(json.dumps(output))
+			return
+
 
 	output = {}
+
+	
 	if len(metadata['previous_submissions']) == 0:
-		output['output'] = 'You have 2 submission attemps remaining.'
+		output['output'] = 'You have 9 submission attemps remaining.'
+		output['total_successful_submission_count'] = 1
+	elif 'total_successful_submission_count' not in metadata['previous_submissions'][-1]['results']:
+		output['output'] = 'You have 9 submission attemps remaining.'
 		output['total_successful_submission_count'] = 1
 	else:
-		output['output'] = 'You have ' + str(3 - 1 - metadata['previous_submissions'][-1]['results']['total_successful_submission_count']) + ' submission attemps remaining.'
+		output['output'] = 'You have ' + str(10 - 1 - metadata['previous_submissions'][-1]['results']['total_successful_submission_count']) + ' submission attemps remaining.'
 		output['total_successful_submission_count'] = metadata['previous_submissions'][-1]['results']['total_successful_submission_count'] + 1
 	output['submission_count'] = len(metadata['previous_submissions']) + 1
 	output['latest_successful_submission_time'] = metadata['created_at']
@@ -90,31 +113,49 @@ def main():
 		if not filename.startswith('testfile'):
 			continue
 		process = subprocess.Popen(["./shell < " + filename], stdout=subprocess.PIPE, shell = True)
-		returnstring1, err = process.communicate()
-		returnstring2 = get_expected_result(filename)
-		if process.returncode == 1 or returnstring1 != returnstring2:
+		timeout = 5
+
+		while process.poll() is None and timeout > 0:
+			timeout -= 1
+			time.sleep(1)
+			timeout_returncode = process.poll()
+
+		if timeout_returncode is None:
 			name = filename
 			score = 0
 			with open(filename) as f:
 				filecontent = f.read()
 			result = "Not Passed. Score you get for this test case: 0\n\n" \
+			"There is deadlock in your program.\n\n" \
 			"The test file is:\n"\
-			+ filecontent + \
-			"\n\nYour output is:\n" \
-			+ returnstring1 + \
-			"\nThe expected output is: \n" \
-			+ returnstring2
-		else:
-			name = filename
-			score = 5
-			with open(filename) as f:
-				filecontent = f.read()
-			result = "Passed. Score you get for this test case: " + str(score)
-		print result + '\n'
-		tests.append({'name': name, 'score': score, "output": result})
-	
+			+ filecontent			
+			print result + '\n'
+			tests.append({'name': name, 'score': score, "output": result})
 
-	# Please add here
+		else:
+			returnstring1, err = process.communicate()
+			returnstring2 = get_expected_result(filename)
+			if process.returncode == 1 or returnstring1 != returnstring2:
+				name = filename
+				score = 0
+				with open(filename) as f:
+					filecontent = f.read()
+				result = "Not Passed. Score you get for this test case: 0\n\n" \
+				"The test file is:\n"\
+				+ filecontent + \
+				"\n\nYour output is:\n" \
+				+ returnstring1 + \
+				"\nThe expected output is: \n" \
+				+ returnstring2
+			else:
+				name = filename
+				score = 5
+				with open(filename) as f:
+					filecontent = f.read()
+				result = "Passed. Score you get for this test case: " + str(score)
+			print result + '\n'
+			tests.append({'name': name, 'score': score, "output": result})
+	
 	# simulate double CTRL-Z
         process = subprocess.Popen(["./shell"])
         time.sleep(2)

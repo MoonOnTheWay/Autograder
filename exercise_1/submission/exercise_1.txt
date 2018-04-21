@@ -1,0 +1,28 @@
+(1.) |a|
+
+(2.) |d|
+
+(3.) |b|
+
+(4.) |b|
+
+(5.) |c|
+
+(6.) |a|
+
+(7.) |c|
+$$
+The child process’s x value is not shared with parent. Thus the modification is not reflected in the parent process. Function excevp() loads a new program and thus wipes out the parent’s code. But if for any reason, loading this program (shell) fails, the print statement (x=11,y=1) does appear. The order of printing is fixed because the parent process waits the child process.
+$$
+
+(8.) |d|
+
+(9.) |d|
+$$
+Explanation: The child process writes the same file from position 0 after the parent writes from offset position 0 also.
+$$
+
+(10.) |c|
+$$
+Explanation: The child process shares the file descriptors of the parent and thus shares the file seek pointer (offset) also.
+$$

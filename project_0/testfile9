@@ -1,1 +1,3 @@
-cat < Makefile | sed 's/H/X/g'
+cat < testfile9 | sort | wc > temp 
+rm temp
+exit

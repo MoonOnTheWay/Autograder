@@ -1,1 +1,1 @@
-cat Makefile | sort | sed 's/e/E/' | sort
+exit

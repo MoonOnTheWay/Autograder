@@ -18,7 +18,7 @@ char* parse(char * lineptr, char **args)
         //If it's whitespace, tab or newline, turn it into \0 and keep moving till we find the next token.
         //This makes sure each arg has a \0 immidiately after it without needing to copy parts of lineIn to new strings. 
         while (!(isdigit(*lineptr) || isalpha(*lineptr) || *lineptr == '-' || *lineptr == '.' || *lineptr == '\"'|| *lineptr == '/' || *lineptr == '_'))
-        {	
+        {   
             //break out if we reach an "end"
             if(*lineptr == '\0' || *lineptr == '<' || *lineptr == '>' || *lineptr == '|' || *lineptr == '&')
                     break;
@@ -33,7 +33,7 @@ char* parse(char * lineptr, char **args)
 
 
         //mark we've found a new arg
-        *args = lineptr;	
+        *args = lineptr;    
         args++;
 
         //keep moving till the argument ends. Once we reach a termination symbol, the arg has ended, so go back to the start of the loop.
@@ -166,8 +166,8 @@ void run(char * linePtr, int length, int inPipe, int outPipe)
         printf("ERROR: Invalid input: %c\n",*nextChar);
 
     }
-	
-	
+    
+    
 }
 
 
@@ -185,8 +185,6 @@ int main(int argc, char *argv[])
     signal(SIGQUIT, SIG_DFL);
     signal(SIGTSTP, cnt);
     char lineIn[1024];
-
-
 
     while(1) 
     {

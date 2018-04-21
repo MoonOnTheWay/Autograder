@@ -1,221 +1,258 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <ctype.h>
-#include <sys/wait.h>
-#include <string.h>
+//CS170 Project 0 by Ryan Kirkpatrick and Victoria Sneddon
 #include <signal.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <stdlib.h>
 
+#define MAX_TOKEN_LENGTH 50
+#define MAX_TOKEN_COUNT 100
+#define MAX_LINE_LENGTH 512
 
-char* parse(char * lineptr, char **args)
-{
-    //while lineIn isn't done. 
-    while (*lineptr != '\0') 
-    {
+// Simple implementation for Shell command
+// Assume all arguments are seperated by space
+// Erros are ignored when executing fgets(), fork(), and waitpid().
 
-        //If it's whitespace, tab or newline, turn it into \0 and keep moving till we find the next token.
-        //This makes sure each arg has a \0 immidiately after it without needing to copy parts of lineIn to new strings. 
-        while (!(isdigit(*lineptr) || isalpha(*lineptr) || *lineptr == '-' || *lineptr == '.' || *lineptr == '\"'|| *lineptr == '/' || *lineptr == '_'))
-        {	
-            //break out if we reach an "end"
-            if(*lineptr == '\0' || *lineptr == '<' || *lineptr == '>' || *lineptr == '|' || *lineptr == '&')
-                    break;
+/**
+ * Sample session
+ *  shell: echo hello
+ *   hello
+ *   shell: ls
+ *   Makefile  simple  simple_shell.c
+ *   shell: exit
+ **/
 
-            *lineptr = '\0';
-            lineptr++;
-        }
-
-        //break out of the 2nd while loop if we reach an "end".
-        if(*lineptr == '\0' || *lineptr == '<' || *lineptr == '>' || *lineptr == '|' || *lineptr == '&' )
-                break;
-
-
-        //mark we've found a new arg
-        *args = lineptr;	
-        args++;
-
-        //keep moving till the argument ends. Once we reach a termination symbol, the arg has ended, so go back to the start of the loop.
-        while (isdigit(*lineptr) || isalpha(*lineptr) || *lineptr == '-'|| *lineptr == '.' || *lineptr == '\"'|| *lineptr == '/' || *lineptr == '_')
-            lineptr++;
-    }
-    *args = '\0';
-    return lineptr;
+//Second handler for the signal to quit program on second Ctrl-Z
+void signalQuitter(){
+    exit(0);
+}
+//First signal handler to switch Ctrl-Z signal to run signalQuitter
+void signalHandler(int sig){
+    signal(SIGTSTP, signalQuitter);
 }
 
-
-
-void execute(char **args,int inPipe, int outPipe, int bgflag)
-{
-    pid_t pid;
-    int status;
-    
-    if (inPipe == 5)
-        dup2(inPipe,0);
-    
-    
-
-    pid = fork();
-
-
-    if (pid > 0) 
-    {
-        if(!bgflag)
-                (void)waitpid(pid, &status, 0);
-    }
-
-
-    else if (pid == 0)
-    {
-        signal(SIGINT, SIG_DFL);
-        signal(SIGTERM, SIG_DFL);
-
-        if(inPipe != 0)
-            dup2(inPipe,0);
-
-        if(outPipe != 1)
-            dup2(outPipe,1);
-
-
-        int execReturn = execvp(*args, args);
-
-        if (execReturn < 0) 
-        { 
-            printf("ERROR: exec failed\n");
-            exit(1);
-        }
-        
-        _exit(0);
-
-    }
-
-
-    else
-    {
-        printf("ERROR: Failed to fork child process.\n");
-        exit(1); 
-    }
-    
-    if(inPipe != 0)
-        close(inPipe);
-    
-    if(outPipe != 1)
-        close(outPipe);
-
-
+//Basic run command function for replacing a process and executing
+void runcommand(char** args){
+    execvp(args[0], args);
+    perror(args[0]);
+    exit(1);
 }
 
+//connects a file as input to a cmd.
+//cmdargs is the tokens of the full command
+//inputPos is the position of a < in cmdargs
+void redirectInput(char** cmdargs, int inputPos){
+    if(inputPos != -2){
+        char* filename;
+        filename = cmdargs[inputPos + 1];
 
+        int fd = open(filename, O_RDONLY);
+        if(fd < 0){exit(1);}
 
-//inPipe default is 0, outPipe default is 1. If you're not sending a pipe to use, use those.
-void run(char * linePtr, int length, int inPipe, int outPipe)
-{
-    int bgflag = 0;
-    
-    
+        dup2(fd, 0);
+        close(fd);
+    }
+}
+
+//connects a file as output to a cmd.
+//cmdargs is the tokens of the full command
+//outputPos is the position of a > in cmdargs
+void redirectOutput(char** cmdargs, int outputPos){
+    if(outputPos != -2){
+        char* filename;
+        filename = cmdargs[outputPos + 1];
+
+        int fd = open(filename, O_WRONLY | O_CREAT, 0666);
+        if(fd < 0){exit(1);}
+
+        dup2(fd, 1);
+        close(fd);
+    }
+}
+
+//Handles input and output redirection of a full command
+//cmdargs are the tokens of the full command
+void redirectHandler(char** cmdargs){
+    char* args[MAX_TOKEN_COUNT];
+
+    //Find the positions of the < and > in the cmdargs
+    //And remove them and the filename from cmdargs and place into args
+    int inputPos  = -2;
+    int outputPos = -2;
     int i = 0;
-    while(linePtr[i] != '\0')
-        i++;
-    if(linePtr[i-1] == '&')
-        bgflag = 1;
-    
-   
-    char * args[length];
-    char * nextChar = parse(linePtr, args);
-
-    //if not empty
-    if(args[0] != '\0')
-    {
-
-        if (strcmp(args[0], "exit") == 0) 
-            exit(0);
-
-        if(*nextChar == '<' && inPipe == 0)
-        {
-            char * in[length];
-            nextChar = parse(nextChar+1,in);
-            inPipe = open(in[0], O_RDONLY);
+    int z = 0;
+    while(cmdargs[z] != NULL){
+        if      (strcmp(cmdargs[z], "<") == 0){
+            inputPos  = z;
+            z = z + 2;
+        }else if(strcmp(cmdargs[z], ">") == 0){
+            outputPos = z;
+            z = z + 2;
+        }else{
+            args[i] = cmdargs[z];
+            i++;
+            z++;
         }
-
-        if(*nextChar == '>')
-        {
-            char * out[length];
-            nextChar = parse(nextChar+1, out);
-            outPipe = open(out[0], O_CREAT|O_WRONLY, 0777);
-        }
-
-
-        if(*nextChar == '|')
-        {
-            int pipes[2];
-            pipe(pipes);
-            execute(args,inPipe,pipes[1], bgflag);
-            run(nextChar+1, length - (nextChar+1 - linePtr), pipes[0], 1);
-            return;
-        }
-
-        if(*nextChar == '\0' || (*nextChar == '&' && nextChar-linePtr == length-1))
-        {
-            execute(args,inPipe,outPipe, bgflag);
-            return;
-        }
-
-
-        //else: some problem, so throw a fit.
-        printf("ERROR: Invalid input: %c\n",*nextChar);
-
     }
-	
-	
+    args[i] = NULL;
+
+    // i = 0;
+    // while(args[i] != NULL){
+    //     printf("args: %s\n", args[i]);
+    //     i++;
+    // }
+
+    redirectInput(cmdargs, inputPos);
+    redirectOutput(cmdargs, outputPos);
+    runcommand(args);
+
 }
 
-
-void cnt(int sig) { 
-       static int count=0; 
-        printf("Total of %d INTERRUPTS received\n", ++count); 
-        if(count==2) exit(0);
-} 
-
-
-int main(int argc, char *argv[])
-{
-    signal(SIGINT, SIG_IGN);
-    signal(SIGTERM, SIG_IGN);
-    signal(SIGQUIT, SIG_DFL);
-    signal(SIGTSTP, cnt);
-    char lineIn[1024];
+//Separate commands by pipe and run each command
+//args is the arguments of all commands
+void pipeHandler(char** args){
+    char* cmd1[MAX_TOKEN_COUNT];
+    char* cmd2[MAX_TOKEN_COUNT];
+    char* cmd3[MAX_TOKEN_COUNT];
 
 
+    int cmdpos1 = 0;
+    int cmdpos2 = 0;
+    int cmdpos3 = 0;
+    int numcmds = 1;
+    int z = 0;
 
-    while(1) 
-    {
-        if(isatty(fileno(stdin)))
-                printf("sish:>"); 
-        
-        
-        if(fgets(lineIn,1024,stdin) == NULL)
-                break;
-                
-        
-        int len = 0;
-        while(lineIn[len] != '\0')
-            len++;
-        
-        //remove the \n that fgets adds to the end
-        if(len != 0 && lineIn[len-1] == '\n')
-        {
-            lineIn[len-1] = '\0';
-            len--;
+    //Add arguments to cmd lists
+    while(args[z] != NULL){
+        if(strcmp(args[z], "|") == 0){
+            numcmds++;
+        }else{
+            switch(numcmds){
+                case 1:{
+                    cmd1[cmdpos1] = args[z];
+                    cmdpos1++;
+                    break;
+                }case 2:{
+                    cmd2[cmdpos2] = args[z];
+                    cmdpos2++;
+                    break;
+                }case 3:{
+                    cmd3[cmdpos3] = args[z];
+                    cmdpos3++;
+                    break;
+                }
+            }
         }
+        z++;
+    }
+    cmd1[cmdpos1] = NULL;
+    cmd2[cmdpos2] = NULL;
+    cmd3[cmdpos3] = NULL;
 
-        
-        
-        run(lineIn, len,0,1);
+    int fd1[2];
+    int fd2[2];
+    pipe(fd1);
+    pipe(fd2);
 
-        
+    if(fork() == 0){//child1 cmd1
+        if(numcmds > 0){
+            if(numcmds > 1){ //pipe to second cmd
+                dup2(fd1[1], 1);
+            }
+
+            close(fd1[0]);
+            close(fd1[1]);
+            close(fd2[0]);
+            close(fd2[1]);
+            redirectHandler(cmd1);
+        } else{exit(0);}
+    }
+    else if(fork() == 0){//child2 cmd 2
+        if(numcmds > 1){
+            //Read from command 1
+            dup2(fd1[0], 0);
+            if(numcmds == 3){
+                dup2(fd2[1], 1);
+            }
+
+            close(fd1[0]);
+            close(fd1[1]);
+            close(fd2[0]);
+            close(fd2[1]);
+            redirectHandler(cmd2);
+        }else{exit(0);}
 
     }
-    
+    else{ //parent or cmd 3
+        if(numcmds == 3){
+            //Read from pipe 2
+            dup2(fd2[0], 0);
+
+            close(fd1[0]);
+            close(fd1[1]);
+            close(fd2[0]);
+            close(fd2[1]);
+
+            waitpid(-1, NULL, 0);
+            redirectHandler(cmd3);
+        }else{exit(0);}
+    }
+}
+
+//creates child process to run the commands
+void runCommands(char** args){
+    pid_t pid = fork();
+    if(pid) { // parent
+        waitpid(pid, NULL, 0);
+        usleep(5000);
+    } else { // child
+        // int z = 0;
+        // while(args[z] != NULL){
+        //     printf("args: %s \n",args[z]);
+        //     z++;
+        // }
+        pipeHandler(args);
+    }
+}
+
+int main(){
+    char line[MAX_LINE_LENGTH];
+    //printf("shell: ");
+
+
+    signal(SIGTSTP, signalHandler);
+    while(fgets(line, MAX_LINE_LENGTH, stdin)) {
+
+        // Build the command and arguments, using execv conventions.
+        //THIS IS THE FIX
+        if(strlen(line) == 1) //reached eof or blank so exit
+            exit(0);
+        line[strlen(line)-1] = '\0'; // get rid of the new line
+        char* arguments[MAX_TOKEN_COUNT];
+        int argument_count = 0;
+
+        char* token = strtok(line, " ");
+        while(token) {
+            arguments[argument_count] = token;
+            //printf("%s\n", token);
+            argument_count++;
+            token = strtok(NULL, " ");
+        }
+        arguments[argument_count] = NULL;
+
+        if(argument_count>0) {
+            if (strcmp(arguments[0], "exit") == 0) exit(0);
+
+            // int z = 0;
+            // while(arguments[z] != NULL){
+            //     printf("arguments: %s \n",arguments[z]);
+            //     z++;
+            // }
+            runCommands(arguments);
+        }
+        //printf("shell: ");
+    }
     return 0;
 }

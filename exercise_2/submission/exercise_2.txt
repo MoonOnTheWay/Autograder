@@ -1,0 +1,19 @@
+(1.) |c|
+
+(2.) |b|
+
+(3.) |a|
+
+(4.) |d|
+
+(5.) |b|
+$$
+The child process’s x value is not shared with parent. Thus the modification is not reflected in the parent process. Function excevp() loads a new program and thus wipes out the parent’s code. But if for any reason, loading this program (shell) fails, the print statement (x=11,y=1) does appear. The order of printing is fixed because the parent process waits the child process.
+$$
+
+(6.) |d|
+
+(7.)
+$$
+The child process’s x value is not shared with parent. Thus the modification is not reflected in the parent process. Function excevp() loads a new program and thus wipes out the parent’s code. But if for any reason, loading this program (shell) fails, the print statement (x=11,y=1) does appear. The order of printing is fixed because the parent process waits the child process.
+$$
