@@ -1,0 +1,167 @@
+#!/usr/bin/env python
+#!/bin/sh
+
+####
+#### Usage is ./autograder
+####
+
+import sys
+import re
+import json
+import os
+import subprocess
+import signal
+import time
+import yaml
+
+RESULTS_FILE='results/results.json'
+METADATA_FILE='submission_metadata.json'
+TEST_FILE='source/tests.yaml'
+
+with open(METADATA_FILE) as f:
+	metadata = json.load(f)
+
+def should_rate_limit():
+	if len(metadata['previous_submissions']) == 0:
+		return False
+	if 'total_successful_submission_count' not in metadata['previous_submissions'][-1]['results']:
+		return False
+	if metadata['previous_submissions'][-1]['results']['total_successful_submission_count'] >= 10:
+		return True
+	return False
+
+def exceed_latency():
+	if len(metadata['previous_submissions']) == 0:
+		return False
+	if 'latest_successful_submission_time' not in metadata['previous_submissions'][-1]['results']:
+		return False
+	now = metadata['created_at']
+	prev = metadata['previous_submissions'][-1]['results']['latest_successful_submission_time']
+	if float(now[6:7]) > float(prev[6:7]) or float(now[8:10]) > float(prev[8:10]):
+		return (float(now[11:13]) + 24) * 3600 + float(now[14:16]) * 60 + float(now[17:19]) - (float(prev[11:13]) * 3600 + float(prev[14:16]) * 60 + float(prev[17:19])) < 1800
+	else:
+		return float(now[11:13]) * 3600 + float(now[14:16]) * 60 + float(now[17:19]) - (float(prev[11:13]) * 3600 + float(prev[14:16]) * 60 + float(prev[17:19])) < 1800   
+
+
+def main():
+	if should_rate_limit():
+		with open(RESULTS_FILE, 'w') as f:
+			output = {}
+			output['output'] = 'Note:\n'\
+			'1) Your final score will be based on both autograder score and manual review of your code.\n'\
+			'2) Your score is weighted against the original skeleton code.\n\n'\
+			'You have submitted more than 10 times. We will use your last submission as your score.'
+			output['submission_count'] = len(metadata['previous_submissions']) + 1
+			output['latest_successful_submission_time'] = metadata['previous_submissions'][-1]['results']['latest_successful_submission_time']
+			output['total_successful_submission_count'] = metadata['previous_submissions'][-1]['results']['total_successful_submission_count']
+			output['tests'] = metadata['previous_submissions'][-1]['results']['tests']
+			output['stdout_visibility'] = 'visible'
+			f.write(json.dumps(output))
+			return 
+	if exceed_latency():
+		with open(RESULTS_FILE, 'w') as f:
+			output = {}
+			output['output'] = 'Note:\n'\
+			'1) Your final score will be based on both autograder score and manual review of your code.\n'\
+			'2) Your score is weighted against the original skeleton code.\n\n'\
+			'You have submitted more than once within 30 minutes. Your last successful submission time is: ' + metadata['previous_submissions'][-1]['results']['latest_successful_submission_time'] + '. Please retry later.'
+			output['submission_count'] = len(metadata['previous_submissions']) + 1
+			output['latest_successful_submission_time'] = metadata['previous_submissions'][-1]['results']['latest_successful_submission_time']
+			output['total_successful_submission_count'] = metadata['previous_submissions'][-1]['results']['total_successful_submission_count']
+			output['tests'] = metadata['previous_submissions'][-1]['results']['tests']
+			output['stdout_visibility'] = 'visible'
+			f.write(json.dumps(output))
+			return
+	
+	output = {}
+	if len(metadata['previous_submissions']) == 0:
+		output['output'] = 'Note:\n'\
+		'1) Your final score will be based on both autograder score and manual review of your code.\n'\
+		'2) Your score is weighted against the original skeleton code.\n\n'\
+		'You have 9 submission attemps remaining.'
+		output['total_successful_submission_count'] = 1
+	elif 'total_successful_submission_count' not in metadata['previous_submissions'][-1]['results']:
+		output['output'] = 'Note:\n'\
+		'1) Your final score will be based on both autograder score and manual review of your code.\n'\
+		'2) Your score is weighted against the original skeleton code.\n\n'\
+		'You have 9 submission attemps remaining.'
+		output['total_successful_submission_count'] = 1
+	else:
+		output['output'] = 'Note:\n'\
+		'1) Your final score will be based on both autograder score and manual review of your code.\n'\
+		'2) Your score is weighted against the original skeleton code.\n\n'\
+		'You have ' + str(10 - 1 - metadata['previous_submissions'][-1]['results']['total_successful_submission_count']) + ' submission attemps remaining.'
+		output['total_successful_submission_count'] = metadata['previous_submissions'][-1]['results']['total_successful_submission_count'] + 1
+	output['submission_count'] = len(metadata['previous_submissions']) + 1
+	output['latest_successful_submission_time'] = metadata['created_at']
+
+	with open(TEST_FILE, "r") as f:
+		test_cases = yaml.load(f)["tests"]
+
+	#process = subprocess.Popen("find /usr -name libc-header-start.h", stdout=subprocess.PIPE, shell = True)
+	# returnstr, err = process.communicate()
+
+	process = subprocess.Popen(["mkdir /tmp/vm"], stdout=subprocess.PIPE, shell = True)
+	returnstr, err = process.communicate()
+
+	process = subprocess.Popen(["cp -r source/harness_code/* /tmp"], stdout=subprocess.PIPE, shell = True)
+	returnstr, err = process.communicate()
+
+	process = subprocess.Popen(["cp -r submission/virtualmemorymanager.cc /tmp/vm"], stdout=subprocess.PIPE, shell = True)
+	returnstr, err = process.communicate()
+
+	process = subprocess.Popen(["cp -r submission/addrspace.h /tmp/userprog"], stdout=subprocess.PIPE, shell = True)
+	returnstr, err = process.communicate()
+
+	process = subprocess.Popen(["cp -r submission/addrspace.cc /tmp/userprog"], stdout=subprocess.PIPE, shell = True)
+	returnstr, err = process.communicate()
+
+	process = subprocess.Popen(["cd /tmp && make"], stdout=subprocess.PIPE, shell = True)
+	returnstr, err = process.communicate()
+	print returnstr
+
+	process = subprocess.Popen(["cp -r /tmp/test/* ."], stdout=subprocess.PIPE, shell = True)
+	returnstr, err = process.communicate()
+
+	tests = []
+	for test in test_cases:
+		print "\n"+test["cmd"] + '\n'
+		process = subprocess.Popen(test["cmd"], stdout=subprocess.PIPE, shell = True)
+		# set timeout detection
+		timeout = 5
+
+		while process.poll() is None and timeout > 0:
+			timeout -= 1
+			time.sleep(1)
+			timeout_returncode = process.poll()
+
+		if timeout_returncode is None:
+			score = 0
+			result = "Not Passed. Score you get for this test case: 0\n\n" \
+			"There is deadlock or segmentation fault in your program.\n" 	
+			print result + '\n'
+			tests.append({'name': test["name"], 'score': score, "output": result})
+			continue
+
+		returnstr, err = process.communicate()
+		returnstr = returnstr.strip('\n')
+		test["output"] = test["output"].strip('\n')
+		print 'Your output: \n' + returnstr + '\n'
+		print 'The correct output: \n' + test["output"] + '\n'
+		if returnstr == test["output"]:
+			print 'Correct'
+			score = test["points"]
+		else:
+			print 'Incorrect'
+			score = 0
+		tests.append({'name': test["name"], 'score': score, 'output': 'Score you get for this test case: ' + str(score)})
+
+	# tests.append({'name': 'Base score', 'score': 25, 'output': '25'})
+	tests = sorted(tests, key = lambda key: key['name'], reverse = False)
+	output['tests'] = tests
+	output['stdout_visibility'] = 'visible'
+
+	with open(RESULTS_FILE, 'w') as f:
+		f.write(json.dumps(output))
+
+main()

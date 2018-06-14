@@ -1,0 +1,134 @@
+#!/usr/bin/env python
+
+####
+#### Usage is ./autograder
+####
+
+import sys
+import re
+import json
+import os
+
+ANSWERS_FILE='source/expected_3.json'
+SUBMISSION_FILE='submission/exercise_3.txt'
+RESULTS_FILE='results/results.json'
+METADATA_FILE='submission_metadata.json'
+
+with open(ANSWERS_FILE, 'r') as f:
+    expected = json.load(f)
+
+with open(METADATA_FILE) as f:
+    metadata = json.load(f)
+
+## check the answer of each question
+def grade(number, file):
+    number = str(number)
+    file = file[file.find('(' + number + '.)'):]
+    requires_letter = 'mc_answer' in expected[number]
+
+    ##make sure they put an explanation between $$
+    if('exp' in expected[number]):
+        index1 = file.index('$$')
+        index2 = file[index1+2:].index('$$')
+        explanation = file[index1+2:index2+index1+2]
+        if len(explanation.split(' ')) < 3:
+            return 'Bad Explanation'
+
+    ##check their answer between | | against expected
+    if requires_letter:
+        m = re.search('\|(.*?)\|', file)
+        if expected[number]['mc_answer'] == m.group(1).replace(' ', '').replace('ANSWER', ''):
+            return 'Correct'
+        else:
+            return 'Incorrect'
+
+    return 'Correct'
+
+def should_rate_limit():
+    if len(metadata['previous_submissions']) == 0:
+        return False
+    if 'total_successful_submission_count' not in metadata['previous_submissions'][-1]['results']:
+        return False
+    if metadata['previous_submissions'][-1]['results']['total_successful_submission_count'] >= 3:
+        return True
+    return False
+
+def exceed_latency():
+    if len(metadata['previous_submissions']) == 0:
+        return False
+    if 'latest_successful_submission_time' not in metadata['previous_submissions'][-1]['results']:
+        return False
+    now = metadata['created_at']
+    prev = metadata['previous_submissions'][-1]['results']['latest_successful_submission_time']
+
+    if float(now[6:7]) > float(prev[6:7]) or float(now[8:10]) > float(prev[8:10]):
+        return (float(now[11:13]) + 24) * 3600 + float(now[14:16]) * 60 + float(now[17:19]) - (float(prev[11:13]) * 3600 + float(prev[14:16]) * 60 + float(prev[17:19])) < 1800
+    else:
+        return float(now[11:13]) * 3600 + float(now[14:16]) * 60 + float(now[17:19]) - (float(prev[11:13]) * 3600 + float(prev[14:16]) * 60 + float(prev[17:19])) < 1800
+
+      
+def main():
+    if should_rate_limit():
+        with open(RESULTS_FILE, 'w') as f:
+            output = {}
+            output['output'] = 'You have submitted more than 3 times. We will use your 3rd submission as your score.'
+            output['submission_count'] = len(metadata['previous_submissions']) + 1
+            output['latest_successful_submission_time'] = metadata['previous_submissions'][-1]['results']['latest_successful_submission_time']
+            output['total_successful_submission_count'] = metadata['previous_submissions'][-1]['results']['total_successful_submission_count']
+            output['tests'] = metadata['previous_submissions'][-1]['results']['tests']
+            f.write(json.dumps(output))
+            return 
+    
+    if exceed_latency():
+        with open(RESULTS_FILE, 'w') as f:
+            output = {}
+            output['output'] = 'You have submitted more than once within 30 minutes. Your last successful submission time is: ' + metadata['previous_submissions'][-1]['results']['latest_successful_submission_time'] + '. Please retry later.'
+            output['submission_count'] = len(metadata['previous_submissions']) + 1
+            output['latest_successful_submission_time'] = metadata['previous_submissions'][-1]['results']['latest_successful_submission_time']
+            output['total_successful_submission_count'] = metadata['previous_submissions'][-1]['results']['total_successful_submission_count']
+            output['tests'] = metadata['previous_submissions'][-1]['results']['tests']
+            f.write(json.dumps(output))
+            return
+     
+    try:       
+        with open(SUBMISSION_FILE, 'r') as f:
+            file = f.read()
+    except:
+        with open(RESULTS_FILE, 'w') as f:
+            output = {}
+            output['output'] = 'Your file is not named correctly. It should be "exercise_3.txt".'
+            tests = []
+            tests.append({'score': 0})
+            output['tests'] = tests
+            f.write(json.dumps(output))
+            return
+
+
+    output = {}
+    if len(metadata['previous_submissions']) == 0:
+        output['output'] = 'You have 2 submission attemps remaining.'
+        output['total_successful_submission_count'] = 1
+    elif 'total_successful_submission_count' not in metadata['previous_submissions'][-1]['results']:
+        output['output'] = 'You have 9 submission attemps remaining.'
+        output['total_successful_submission_count'] = 1
+    else:
+        output['output'] = 'You have ' + str(3 - 1 - metadata['previous_submissions'][-1]['results']['total_successful_submission_count']) + ' submission attemps remaining.'
+        output['total_successful_submission_count'] = metadata['previous_submissions'][-1]['results']['total_successful_submission_count'] + 1
+    
+    output['submission_count'] = len(metadata['previous_submissions']) + 1
+    output['latest_successful_submission_time'] = metadata['created_at']
+    tests = []
+
+
+    for i in range(1, len(expected) + 1):
+        result = grade(i, file)
+        if result == 'Correct':
+            score = 1
+        else:
+            score = 0
+        tests.append({ 'score': score, 'output': result })
+    output['tests'] = tests
+
+    with open(RESULTS_FILE, 'w') as f:
+        f.write(json.dumps(output))
+main()

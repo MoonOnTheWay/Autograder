@@ -1,0 +1,29 @@
+{
+    "1": {
+        "mc_answer": "c"
+    },
+    "2": {
+        "mc_answer": "d"
+    },
+    "3": {
+        "mc_answer": "a"
+    },
+    "4": {
+        "mc_answer": "b",
+        "exp": true
+    },
+    "5": {
+        "mc_answer": "a"
+    },
+    "6": {
+        "mc_answer": "a",
+        "exp": true
+    },
+    "7": {
+        "mc_answer": "b"
+    },
+    "8": {
+        "mc_answer": "c",
+        "exp": true
+    }
+}

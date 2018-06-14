@@ -1,0 +1,55 @@
+(1.)
+$$
+Line #1 is to allocate stack and setup register pointers for running this new thread.
+Line #2 is to disable interrupt for mutual exclusion. Line #3 is to place this new thread into the
+ready-to- run queue. Line #4 is to enable interrupt.
+$$
+
+(2.) |a|
+$$
+Explain xx xx
+$$
+
+(3.) 
+$$
+llocate stack and setup register pointers for running this new thread.
+Line #2 is to disable interrupt for mutual exclusion. 
+$$
+
+(4.) |c|
+
+(5.) |b|
+
+(6.) |b|
+
+(7.) |a|
+$$
+Line #1 is to allocate stack and setup register pointers for running this new thread.
+Line #2 is to disable interrupt for mutual exclusion. Line #3 is to place this new thread into the
+ready-to- run queue. Line #4 is to enable interrupt.
+$$
+
+(8.) |c|
+$$
+Line #1 is to allocate stack and setup register pointers for running this new thread.
+Line #2 is to disable interrupt for mutual exclusion. Line #3 is to place this new thread into the
+ready-to- run queue. Line #4 is to enable interrupt.
+$$
+
+(9.) |c|
+$$
+Line #1 is to allocate stack and setup register pointers for running this new thread.
+Line #2 is to disable interrupt for mutual exclusion. Line #3 is to place this new thread into the
+ready-to- run queue. Line #4 is to enable interrupt.
+$$
+
+(10.) |b|
+
+(11.) |c|
+
+(12.) |a|
+$$
+Line #1 is to allocate stack and setup register pointers for running this new thread.
+Line #2 is to disable interrupt for mutual exclusion. Line #3 is to place this new thread into the
+ready-to- run queue. Line #4 is to enable interrupt.
+$$

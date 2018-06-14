@@ -1,0 +1,43 @@
+{
+    "1": {
+        "exp": true
+    },
+    "2": {
+        "mc_answer": "a",
+        "exp": true
+    },
+    "3": {
+        "exp": true
+    },
+    "4": {
+        "mc_answer": "c"
+    },
+    "5": {
+        "mc_answer": "b"
+    },
+    "6": {
+        "mc_answer": "b"
+    },
+    "7": {
+        "mc_answer": "a",
+        "exp": true
+    },
+    "8": {
+        "mc_answer": "c",
+        "exp": true
+    },
+    "9": {
+        "mc_answer": "c",
+        "exp": true
+    },
+    "10": {
+        "mc_answer": "b"
+    },
+    "11": {
+        "mc_answer": "c"
+    },
+    "12": {
+        "mc_answer": "a",
+        "exp": true
+    }
+}

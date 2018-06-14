@@ -1,0 +1,68 @@
+tests:
+  - cmd: /tmp/vm/nachos -x /tmp/test/exec-test1
+    name: exec-test1
+    points: 10
+    output: |
+      About to Exec() some stuff...
+      Greetings from exec2.c
+      Greetings from exec2.c
+  - cmd: /tmp/vm/nachos -x /tmp/test/exec-test2
+    name: exec-test2
+    points: 10
+    output: |
+      About to Exec() some stuff...
+      Greetings from exec2.c
+      Greetings from exec2.c
+      About to join child processes...
+  - cmd: /tmp/vm/nachos -x /tmp/test/testvm
+    name: testvm
+    points: 10
+    output: |
+      Done
+  - cmd: /tmp/vm/nachos -x /tmp/test/testvm1
+    name: testvm1
+    points: 10
+    output: |
+      Done
+  - cmd: /tmp/vm/nachos -x /tmp/test/testvmexec
+    name: testvmexec
+    points: 10
+    output: |
+      Done
+      Done
+      Done
+  - cmd: /tmp/vm/nachos -x /tmp/test/testvmexec2
+    name: testvmexec2
+    points: 10
+    output: |
+      Done
+      Done
+      Repeat
+      Done
+      Done
+      Repeat
+      Done
+      Done
+      Exit
+  - cmd: /tmp/vm/nachos -x /tmp/test/testvmfork
+    name: testvmfork
+    points: 10
+    output: |
+      Main
+      Main-2
+      Forked 2
+      Forked 1
+  - cmd: /tmp/vm/nachos -x /tmp/test/testvmfork1
+    name: testvmfork1
+    points: 10
+    output: |
+      Main
+      Main-2
+      Forked 2
+      Forked 1
+  - cmd: /tmp/vm/nachos -x /tmp/test/vm-test
+    name: vm-test
+    points: 10
+    output: |
+      Attempted to write to 200 pages.
+      Attempted to read from 200 pages.

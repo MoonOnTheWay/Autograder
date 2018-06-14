@@ -1,0 +1,69 @@
+tests:
+  - cmd: "./nachos -x test/close-test 2> /dev/null"
+    name: close
+    points: 15
+    output: |
+      "Opening file...\nRead first 10 bytes: Mr and Mrs
+      Read next 10 bytes:  Dursley,
+      Closing file...
+      Opening file again...
+      Reading first 10 bytes again: Mr and Mrs"
+  - cmd: "./nachos -x test/create-test 2> /dev/null"
+    name: create
+    points: 15
+    output: |
+      "Creating new file...
+      Open said file...
+      Writing said file...
+      Reading said file...
+      File contains: Indubitably"
+  - cmd: "./nachos -x test/exec-test 2> /dev/null"
+    name: exec
+    points: 15
+    output: |
+      "About to Exec() some stuff...
+      Greetings from exec1.c
+      Greetings from exec2.c
+      Greetings from exec3.c
+      Preparing to Halt()..."
+  - cmd: "./nachos -x test/fork-test 2> /dev/null"
+    name: fork
+    points: 15
+    output: |
+      "main forking proc1...
+      proc1 forking proc2...
+      proc2 forking proc3...
+      proc3 halting the system..."
+  - cmd: "./nachos -x test/join-test 2> /dev/null"
+    name: join
+    points: 15
+    output: |
+      "main Execing proc1
+      proc1 Execing proc2
+      main waiting proc1
+      proc2 Execing proc3
+      proc1 waiting for proc2
+      proc3: Thanks for waiting fellas!
+      proc2 waiting for proc3
+      proc2 Exiting
+      proc1 Exiting
+      Preparing to Halt()..."
+  - cmd: "./nachos -x test/open-test 2> /dev/null"
+    name: open
+    points: 15
+    output: |
+      "open1.txt: ABCDEFGHIJ
+      open2.txt: abcdefghij
+      open3.txt: !@#$%^&*("
+  - cmd: "./nachos -x test/yield-test 2> /dev/null"
+    name: yield
+    points: 15
+    output: |
+      "main Forking some stuff...
+      proc1 Yielding...
+      proc2 Yielding...
+      proc3 Yielding...
+      proc1 resuming...
+      proc2 resuming...
+      proc2 resuming...
+      Preparing to Halt..."

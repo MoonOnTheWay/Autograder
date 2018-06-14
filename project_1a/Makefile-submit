@@ -1,0 +1,38 @@
+CC      = g++
+CFLAGS  = -O
+LDFLAGS  = -O -lpthread 
+
+FLAGS0  = -O -lpthread -DNOLOCK
+FLAGS1  = -O -lpthread 
+FLAGS2  = -O -lpthread -DRWLOCK 
+FLAGS3  = -O -lpthread -DFINEGRAIN
+FLAGS4  = -O -lpthread -DFINEGRAIN -DRWLOCK 
+
+all:  phashcoarse phashcoarserw  phashfine phashfinerw
+#all:  phashchain phashcoarse phashcoarserw  phashfine phashfinerw
+
+#TODO: better would be to put these as build files in submit.cs
+#ptest-1a.cc:
+#	scp ~cs170/public_html/projects/proj1a-harness/ptest-1a.cc ptest-1a.cc
+
+#ptest-rwlock.cc:
+#	scp ~cs170/public_html/projects/proj1a-harness/ptest-rwlock.cc ptest-rwlock.cc
+
+
+phashchain: hashchain.cc ptest-1a.cc
+	$(CC) -o $@ $^ $(FLAGS0)
+
+phashcoarse: phash.cc rwlock.cc ptest-1a.cc
+	$(CC) -o $@ $^ $(FLAGS1)
+
+phashcoarserw: phash.cc rwlock.cc ptest-1a.cc
+	$(CC) -o $@ $^ $(FLAGS2)
+
+phashfine: phash1.cc rwlock.cc ptest-1a.cc
+	$(CC) -o $@ $^ $(FLAGS3)
+
+phashfinerw: phash1.cc rwlock.cc ptest-1a.cc
+	$(CC) -o $@ $^ $(FLAGS4)
+
+clean:
+	rm *.o hashchain phashchain phashcoarse phashcoarserw  phashfine phashfinerw rwlock-test
